@@ -1,0 +1,500 @@
+\documentclass{article}
+\usepackage[letterpaper,portrait,top=0.4in, left=0.6in, right=0.6in, bottom=1in]{geometry}
+
+\usepackage{enumitem}
+\usepackage{amsmath, amsfonts, amsthm, amssymb}
+\usepackage{graphicx, float}
+\usepackage[style=alphabetic]{biblatex}
+\usepackage{mathtools}
+\usepackage{mlmodern}
+\usepackage{titlesec}
+\usepackage{interval}
+\usepackage{hyperref}
+\usepackage{siunitx}
+\usepackage{titling}
+\usepackage{vwcol}
+\usepackage{setspace}
+\usepackage{empheq}
+\usepackage{tabularray}
+\usepackage{cancel}
+\usepackage{esdiff}
+\usepackage{multicol}
+\usepackage{fancyvrb}
+\usepackage{mdframed}
+\usepackage{esdiff}
+\usepackage{tikzsymbols}
+\usepackage{multicol}
+\usepackage{tikz}
+\usepackage{varwidth}
+\usepackage{parskip}
+\usepackage{pgfplots}
+\usepackage{soul}
+\usepackage{tcolorbox}
+\pgfplotsset{compat=1.18}
+\addbibresource{refs.bib}
+\intervalconfig {
+	soft open fences
+}
+
+\newcommand{\alignedintertext}[1]{%
+  \noalign{%
+    \vtop{\hsize=\linewidth#1\par
+    \expandafter}%
+    \expandafter\prevdepth\the\prevdepth
+  }%
+}
+\newcommand{\tabitem}{~~\llap{\textbullet}~~}
+\newtheorem{lemma}{Lemma}
+
+\newcommand*{\problem}[1]{\section*{Problem #1}}
+\newcommand*{\aps}{\section*{AP Corner}}
+\newcommand*{\deriv}[1][x]{\ensuremath{\dfrac{\mathrm{d}}{\mathrm{d}#1}}}
+\newcommand*{\floor}[1]{\ensuremath{\lfloor #1\rfloor}}
+\newcommand*{\lheqzero}{\ensuremath{\underset{\text{L'H}}{\overset{\left[\frac00\right]}{=}}}}
+\newcommand*{\lheqinfty}{\ensuremath{\underset{\text{L'H}}{\overset{\left[\frac{\infty}{\infty}\right]}{=}}}}
+
+\DeclareMathOperator{\DNE}{DNE}
+\DeclareMathOperator{\sgn}{sgn}
+
+\DeclareMathOperator{\arccsc}{arccsc}
+\DeclareMathOperator{\arcsec}{arcsec}
+\DeclareMathOperator{\arccot}{arccot}
+
+\let\Re\relax
+\let\Im\relax
+\DeclareMathOperator{\Re}{Re}
+\DeclareMathOperator{\Im}{Im}
+
+\title{\vspace*{-40pt}Numerical Eigenvalue Algorithms}
+\author{Jayden Li}
+\date{Linear Algebra 2024-25}
+% \allowdisplaybreaks
+\postdisplaypenalty=100000
+\setcounter{section}{-1}
+
+\begin{document}
+\setstretch{1.25}
+\fontsize{11pt}{12pt}\selectfont
+\setlength{\abovedisplayskip}{\abovedisplayskip/2}
+\setlength{\belowdisplayskip}{\belowdisplayskip/2}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2ex plus 0.5ex minus 0.2ex}
+\maketitle
+
+\section{Introduction}
+
+Let $A$ be any $n\times n$ matrix. Consider the equation $Ax=\lambda x$: calculating eigenvalues $\lambda$ and eigenvectors $x$ for a large matrix is a challenging problem. The naive algorithm of solving the roots of the characteristic polynomial $\det(A-\lambda I)=0$ is easy to compute on small matrices, but hard to implement in general. Most polynomial solvers, including NumPy's \texttt{roots} function, calculate the eigenvalues of the companion matrix of the coefficients of the characteristic polynomial \cite{nproots}.
+
+We will derive the Power Method, and show why it breaks down in certain cases. Then, we introduce a very basic $QR$ algorithm, which suffers from similar limitations to the Power Method. Finally, we will see the algorithm actually used by libraries to compute eigenvalues.
+
+In the end, we can compare the performance of all algorithms, in a case where the less advanced algorithms do not break down. Since there are too many variables affecting time, including the choice of starting vector, number of iterations and computer background activity, we will compare by a simple metric: \textbf{floating point operations}. Many advanced algorithms save time by performing less floating point operations per iteration, and it seems fair to judge them by this metric.
+
+% We will examine three other algorithms for calculating the eigenvalue, without solving the characteristic polynomial: the Power Iteration Method, the $QR algorithm and Schur decomposition. We will also find some degenerate cases where the algorithm breaks down, and calculate the time taken by each algorithm on random matrices of different sizes.
+
+% \begin{tcolorbox}[colback=red!5!white,colframe=red!75!black,parbox=false]
+% 	In the interest of fairness, all benchmarks done in this paper are run under the following conditions.
+% 	\begin{itemize}
+% 		\item All benchmarks are run on my personal laptop, with an Intel Core i7-1165G7 processor, no dedicated GPU and 16GB of RAM.
+% 		\item The computer is restarted before each test, in order to minimize the number of system and user programs running.
+% 		\item Benchmark code are in the Jupyter Notebook, but the benchmark is ran by directly invoking \texttt{python} in a terminal to eliminate the overhead associated with running in a Notebook.
+% 		\item The only user application open during the benchmark will be the terminal.
+% 		\item Time is taken using Python's \texttt{time} module.
+% 		\item Python version 3.13.2 and NumPy version 2.2.3 are used for all benchmarks.
+% 		% \item The time used is the average of 5 runs of the benchmark.
+% 		\item A set of matrices of different sizes are generated \ul{once} using \texttt{np.random.rand}. The matrices whose eigenvalues are computed by each algorithm are the same.
+% 	\end{itemize}
+% 	Implementation for all algorithms can be found in the Jupyter Notebook.
+% \end{tcolorbox}
+
+% \newpage
+\section{Power Method}
+
+\begin{tcolorbox}[title={Power Method},colback=red!5!white,colframe=red!75!black,parbox=false]
+	\begin{enumerate}
+		\item Let $x_0$ be a random vector in $\mathbb R^n$.
+		\item Define $\displaystyle x_{i+1}=\frac{Ax_i}{||Ax_i||}$. Then $x_k\neq A^kx_0$, but are pointing in the same direction.
+		\item Iterate the above process for $m$ steps. Now, we have have calculated $x_m$, which is parallel to $A^m x_0$.
+		\item Calculate the dominant eigenvalue $\displaystyle \lambda_1=\frac{\left\Vert A A^m x_0 \right\Vert}{\left\Vert A^m x_0 \right\Vert}=\frac{\left\Vert A x_m\right\Vert}{\left\Vert x_m \right\Vert}=\frac{Ax_m\cdot x_m}{x_m \cdot x_m}$.
+	\end{enumerate}
+	Reference: \cite{kochlab}.
+\end{tcolorbox}
+
+We can try to understand why this algorithm works. Since we are repeating the process for a large number of iterations, let us examine the behavior of this algorithm as the number of iterations tends to infinity. Reference: \cite{cornellnotes}.
+
+Let $A=PDP^{-1}$ be an $n\times n$ diagonalizable matrix. Then:
+\begin{equation}
+	A^k
+	=\left(PDP^{-1}\right)^k
+	=PD^{k}P^{-1} \implies A^kP=PD^k
+\end{equation}
+Let $\lambda_1,\lambda_2,\ldots,\lambda_n$ be the eigenvalues of $A$, such that $\left|\lambda_1\right|\geq \left|\lambda_2\right|\geq \ldots\geq \left|\lambda_n\right|$.
+
+Let $v_0\in\mathbb R^n$ be a random vector, let $v=Pv_0$, let $v_{0_i}$ be the $i$th component of $v_0$, and let $p_i$ be the $i$th column of $P$. Since $P$ is invertible, $v$ is essentially another random vector. $p_i$ must be an eigenvector of $A$, since $P$ is the matrix of eigenvectors. Multiplying on the left of equation (1), we have:
+\begin{align*}
+	A^kPv_0=PD^kv_0
+	=A^k v 
+	&= P \begin{bmatrix}
+		\lambda_1^k & & \\
+		& \ddots & \\
+		& & \lambda_n^k
+	\end{bmatrix}
+	\begin{bmatrix}
+		v_{0_1} \\ \dots \\ v_{0_n}
+	\end{bmatrix}
+	=\begin{bmatrix}
+		p_1 & \ldots & p_n
+	\end{bmatrix} \begin{bmatrix}
+		\lambda_1^k v_{0_1} \\ 
+		\vdots \\
+		\lambda_n^k v_{0_n} \\ 
+	\end{bmatrix}
+	=\sum_{i=1}^{n}\lambda_i^k v_{0_i} p_i \\
+	&=\sum_{i=1}^{n}\lambda_1^k\frac{\lambda_i^k}{\lambda_1^k} v_{0_i} p_i
+	=\lambda_1^k \sum_{i=1}^{n}\left(\frac{\lambda_i}{\lambda_1}\right)^k v_{0_i}p_i
+\end{align*}
+\ul{Suppose the dominant eigenvalue $\lambda_1$ is greater than all other eigenvalues: $\left|\lambda_1\right|>\left|\lambda_2\right|\geq \left|\lambda_3\right|\geq\ldots\geq \left|\lambda_n\right|$}*, so $0\leq\lambda_i/\lambda_1<1$ for all $1\leq i\leq n$. Thus, as $k\to\infty$, $\left(\lambda_i/\lambda_1\right)^k\to0$.
+\begin{equation*}
+    \lim_{k\to\infty}A^kv
+	=\lim_{k\to\infty}\lambda_1^k \sum_{i=1}^{n}\left(\frac{\lambda_i}{\lambda_1}\right)^k v_{0_i}p_i
+	=\lim_{k\to\infty}\lambda_1^k \left(\cancel{\left(\frac{\lambda_1}{\lambda_1}\right)^k} v_{0_1}p_1+\cancel{\sum_{i=2}^{n}\left(\frac{\lambda_i}{\lambda_1}\right)^k v_{0_i}p_i}\right)
+	=\lim_{k\to\infty}\lambda_1^k v_{0_1}{p_1}
+\end{equation*}
+Therefore, as $k$ tends to infinity, $A^kv$ is parallel to $p_1$ as $\lambda_1$ and $v_{0_1}$ are scalar values. Recall that $p_1$ is an eigenvalue of $A$, associated with the eigenvalue $\lambda_1$.
+
+Let us note that if $(x,\lambda)$ is an eigenpair of $A$, a scalar multiple $cx$ is also an eigenvector associated with the same eigenvalue $\lambda$: $A(cx)=c(Ax)=c(\lambda x)=\lambda(cx)$.
+
+Thus, $p_1=A^kv$ are eigenvectors of $A$, both associated with the same eigenvalue $\lambda_1$. When performing the Power Method on a matrix, we do not know $p_1$, but we can calculate $A^kv$, and for higher values of $k$ becomes ``almost'' parallel to eigenvector $p_1$.
+
+Suppose $A^kv$ is an eigenvector, then we can easily calculate the eigenvalue $\lambda_1$.
+\begin{equation*}
+    A\left(A^kv\right)=\lambda_1 \left(A^k v\right)
+	\implies \left\Vert A\left(A^kv\right)\right \Vert=\left\Vert\lambda_1 \left(A^k v\right)\right\Vert=\lambda_1 \left\Vert A^k v\right\Vert
+	\implies \lambda_1=\frac{\left\Vert A \left(A^k v\right)\right\Vert}{\left\Vert A^k v\right\Vert}
+	=\boxed{\frac{A \left(A^k v\right)\cdot \left(A^k v\right)}{\left(A^k v\right)\cdot \left(A^k v\right)}}
+\end{equation*}
+\begin{tcolorbox}[colback=blue!5!white,colframe=blue!75!black,parbox=false]
+	We will prove the equality used above:
+	\begin{gather}
+		\frac{\left\Vert A \left(A^k v\right)\right\Vert}{\left\Vert A^k v\right\Vert}
+		=\frac{A \left(A^k v\right)\cdot \left(A^k v\right)}{\left(A^k v\right)\cdot \left(A^k v\right)} \\
+		\iff \frac{\left\Vert A \left(A^k v\right)\right\Vert}{\left\Vert A^k v\right\Vert}
+		=\frac{A \left(A^k v\right)\cdot \left(A^k v\right)}{\left\Vert A^k v\right\Vert^2}
+		\iff \left\Vert A \left(A^k v\right)\right\Vert \left\Vert A^kv\right\Vert=A \left(A^k v\right) \cdot \left(A^k v\right) \notag
+	\end{gather}
+	Which is true by the equality case of the Cauchy-Schwarz Inequality, since the two vectors $A \left(A^kv\right)$ and $A^kv$ are linearly dependent. As seen earlier, $A^kv$ is an eigenvector of $A$ as $k\to\infty$, so $A \left(A^k v\right)=\lambda_1 A^k v$ is a scalar multiple of $A^k v$. \qed
+\end{tcolorbox}
+
+Let us return to the condition marked by an asterisk above. If that assumption is not met, i.e. $\left|\lambda_1\right|=\left|\lambda_2\right|$. Let us suppose for now that $\left|\lambda_2\right|>\left|\lambda_3\right|$.
+\begin{align*}
+    \lim_{k\to\infty}A^k v
+	&=\lim_{k\to\infty}\lambda_1^k \sum_{i=1}^{n}\left(\frac{\lambda_i}{\lambda_1}\right)^k v_{0_i}p_i
+	=\lim_{k\to\infty}\lambda_1^k \left(\cancel{\left(\frac{\lambda_1}{\lambda_1}\right)^k} v_{0_1}p_1+\cancel{\left(\frac{\lambda_2}{\lambda_1}\right)^k}v_{0_2}p_2+\cancel{\sum_{i=3}^{n}\left(\frac{\lambda_i}{\lambda_1}\right)^k v_{0_i}p_i}\right) \\
+	&=\lim_{k\to\infty}\left(v_{0_1}p_1+v_{0_2}p_2\right)
+\end{align*}
+Knowing this is parallel to $A^kv$ is not helpful, so the algorithm will break down.
+
+Furthermore, let us consider the case where the dominant eigenvalue of a real matrix $A$ is a complex number $a+bi$. Complex eigenvalues appear in complex conjugate pairs (since if $a+bi$ is a root of the characteristic polynomial, so must $a-bi$), so $a-bi$ is also an eigenvalue \cite{utnlecture}. But notice that $\left|a+bi\right|=\sqrt{a^2+b^2}=\left|a-bi\right|$, so the algorithm will break down. In fact, if the dominant eigenvalue is complex, the algorithm will not work.
+
+% \begin{tcolorbox}[colback=red!5!white,colframe=red!75!black,parbox=false]
+% 	Since many algorithms are iterative, its time is dependent on the number of iterations. In order to standardize running time, we will run however many iterations such that the eigenvalue is within a certain threshold within the actual eigenvalues, as calculated by NumPy. For the Power Method, we also have to address the problem of the starting vector. Different choices of the starting vector $x_0$ will affect how quickly we converge upon the eigenvector.
+% 	\begin{enumerate}
+% 		\item Create a random $n\times n$ matrix using \texttt{np.random.randn} and calculate the actual eigenvalues with \texttt{np.linalg.eigvals}.
+% 		\item Calculate a random starting vector $x_0$.
+% 		\item Set \texttt{iterations}, the number of iterations of the Power Method, to $10$. As an optimization when running the same size matrix again, we can half the previous result for a good starting baseline.
+% 		\item Start timer.
+% 		\item Run the power method for \texttt{iterations} iterations.
+% 		\item End timer.
+% 		\item Check if the calculated eigenvalues are within $0.001$ of the actual eigenvalues. If yes, use $(\text{end time}-\text{start time})$. If not, increment \texttt{iterations} by $10$, then return to step 4.
+% 	\end{enumerate}
+% \end{tcolorbox}
+
+% \newpage
+\section{Basic $QR$ Algorithm}
+\begin{tcolorbox}[title={Schur form},colback=blue!5!white,colframe=blue!75!black,parbox=false]
+	Let $A$ be an $n\times n$ real matrix. The \textbf{Schur form} of $A$ is:
+	\begin{equation*}
+		A=QUQ^T=QUQ^{-1}
+	\end{equation*}
+	where $Q$ is orthogonal and $U$ is upper triangular. $A$ and $U$ are similar so they share the same eigenvalues, which are the diagonal entries of $U$.
+\end{tcolorbox}
+
+For some $n\times n$ matrix $A$, the $QR$ Algorithms compute the Schur form of $A$. Once we calculate the triangular matrix $T$, it is trivial to find the eigenvalues of $A$.
+
+\begin{tcolorbox}[title={Basic $QR$ Algorithm},colback=red!5!white,colframe=red!75!black,parbox=false]
+	\begin{enumerate}
+		\item Set $A_1=A$.
+		\item Define $A_{i+1}=R_iQ_i$, where $Q_iR_i$ is the $QR$ factorization of $A_i$.
+		\item Iterate step 2 $m$ times to calculate $A_{m+1}$.
+		\item If the eigenvalues of $A$ are real, then for large values of $m$, $A_{m+1}$ converges to the triangular matrix $T$ in the Schur form $A=QTQ^T$. The eigenvalues of $A$ are the diagonal entries of $A_{m+1}$.
+	\end{enumerate}
+	Reference: \cite[64]{ethbook}.
+\end{tcolorbox}
+Let us try to understand this algorithm in some very specific cases. If $A$ is a real matrix with complex eigenvalues, the Basic $QR$ Algorithm will not converge upon a triangular matrix. Let us examine the case where $A$ is a real matrix, with only real eigenvalues. Reference: \cite{rutgers}.
+
+We define $A_{i+1}=R_iQ_i$, such that $A_i=Q_iR_i$ is a $QR$ factorization. Since $Q_i$ is orthogonal, $R_i=Q_i^TA_i$. 
+\begin{equation}
+    A_{i+1}=Q_i^T A_i Q_i
+\end{equation}
+Furthermore, notice $A_i=R_{i-1}Q_{i-1}=Q_{i-1}^T A_{i-1} Q_{i-1}$. Substituting into equation (3):
+\begin{equation*}
+	A_{i+1}=Q_i^T Q_{i-1}^T A_{i-1} Q_{i-1} Q_i
+\end{equation*}
+Let $P_i=Q_1Q_2\ldots Q_i$. In general, I claim:
+\begin{equation}
+	A_{i+1}=P_i^T A_1 P_i
+\end{equation}
+
+\begin{tcolorbox}[colback=blue!5!white,colframe=blue!75!black,parbox=false]
+\begin{proof}
+	We will prove equation (4) by induction.
+
+	\textbf{Base case.} When $i=1$, $P_i=Q_1$. Then $P_i^T A_1 P_i=Q_1^T A_1 Q_1=R_1Q_1=A_2=A_{i+1}$.
+
+	\textbf{Inductive step.} Suppose $A_i=P_{i-1}^T A_1 P_{i-1}$. Let $Q_i,R_i$ be the $QR$ factorization of $A_i$, such that $A_i=Q_iR_i$, and $R_i=Q_i^T A_i$. Recall the definition:
+	\begin{equation*}
+		A_{i+1}
+		=R_iQ_i
+		=Q_i^T A_i Q_i
+		=Q_i^T \left(P_{i-1}^T A_1 P_{i-1}\right) Q_i
+		=\left(P_{i-1} Q_i\right)^T A_1 \left(P_{i-1}Q_i\right)
+	\end{equation*}
+	By definition, $P_i=Q_1Q_2\ldots Q_{i-1}Q_i=P_{i-1}Q_i$, so:
+	\begin{equation*}
+		A_{i+1}=P_i^T A_1 P^i
+	\end{equation*}
+\end{proof}
+\end{tcolorbox}
+
+We find the diagonalization of $A=X\Lambda X^{-1}$, and the factorization $X=QR$.
+\begin{equation*}
+	A=X\Lambda X^{-1}
+	=QR\Lambda R^{-1}Q^{-1}
+	\implies Q^T AQ=R\Lambda R^{-1}
+\end{equation*}
+The right-hand side $R\Lambda R^{-1}$ is the product of three triangular matrices, and the product is also triangular. Furthermore, let us suppose $\lim_{i\to\infty}P_i=Q$. Then:
+\begin{equation*}
+	\lim_{i\to\infty}A_i=\lim_{i\to\infty}P_i^T A P_i=R\Lambda R^{-1}
+\end{equation*}
+As $m$, the number of iterations in the Basic $QR$ Algorithm, tends to infinity, the result of the $QR$ iteration $A_{m+1}$ tends to the triangular matrix $R\Lambda R^{-1}$. Notice that $A_{m+1}$ is similar to $A$, since $\left(P_i^T\right)^{-1}=P_i$ as $P_i$ is orthogonal, and thus \textbf{the eigenvalues of $A$ are the diagonal entries of $A_{m+1}$, as $m\to\infty$.}
+
+In general, $QR$ iteration converges to a \textit{block triangular} matrix:
+\begin{equation*}
+    \lim_{i\to\infty}A_i
+	=\begin{bmatrix}
+		B_1 & 0 & \ldots & 0 \\
+		0 & B_2 & \ldots & 0 \\
+		0 & 0 & \ddots & 0 \\
+		0 & 0 & \ldots & B_k
+	\end{bmatrix}
+\end{equation*}
+where $B_1,\ldots B_k$ are square matrices. The proof is difficult and is outside the scope of this project. $\lim_{i\to\infty}A_i$ is the triangular matrix in the Schur form of $A$ depends on the assumption $\lim_{i\to\infty}P_i=Q$, which is true if:
+\begin{equation}
+	\left|\lambda_1\right|>\left|\lambda_2\right|>\ldots>\left|\lambda_n\right|   
+\end{equation}
+where $\lambda_1,\ldots\lambda_n$ are the eigenvalues of $A$. The Basic $QR$ Algorithm converges to the upper triangular matrix $U$ in the Schur form of $A$ when the magnitudes of each eigenvalue are different.
+
+It is interesting that the Basic $QR$ Algorithm may produce the correct Schur form (and eigenvalues) for matrices not satisfying property (5), but may also break down (Section 2.2 and 2.3 of Jupyter Notebook).
+
+% \begin{proof}
+% 	We conclude by proving $\lim_{i\to\infty}P_i=Q$. Let $U_i=R_iR_{i-1}\ldots R_1$. Recall that $Q_i$ and $R_i$ are defined as the $QR$ factorization of $A_i$, so $A_i=Q_iR_i$.
+% 	\begin{equation}
+% 	    P_i U_i
+% 		=Q_1Q_2\ldots Q_{i-1}\left(Q_i R_i\right) R_{i-1}\ldots R_2 R_1
+% 		=P_{i-1}A_i U_{i-1}
+% 	\end{equation}
+% 	From equation (4), it follows that:
+% 	\begin{equation*}
+% 		A_i=P_{i-1}^TA_1P_{i-1}
+% 	\end{equation*}
+% 	Since $P_{i-1}=Q_1Q_2\ldots Q_{i-1}$ is the product of orthogonal matrices, $P_{i-1}$ is also orthogonal: $\left(P_{i-1}\right)^T=\left(P_{i-1}\right)^{-1}$. Multiplying on the left by $P_{i-1}$:
+% 	\begin{equation*}
+% 		P_{i-1}A_i=A_1 P_{i-1}
+% 	\end{equation*}
+% 	Substituting the above into equation (5):
+% 	\begin{equation*}
+% 		P_iU_i
+% 		=A_1P_{i-1}U_{i-1} \\
+% 		=A^i
+% 	\end{equation*}
+% 	We can easily see the above is true by induction: the base case where $i=1$ is trivial: $P_iU_i=Q_1R_1=A_1=A$; if $P_{i-1}U_{i-1}=A^{i-1}$, then $P_iU_i=A_1P_{i-1}U_{i-1}=AA^{i-1}=A^i$.
+%
+% 	Since $A=X\Lambda X^{-1}$, then $A^i=X\Lambda^i X^{-1}$. We have the $QR$ factorization $X=QR$, and suppose the $LU$ factorization of $X^{-1}$ exists, and $X^{-1}=LU$.
+% 	\begin{equation*}
+% 		A^i
+% 		=X\Lambda^i X^{-1}
+% 		=QR\Lambda^i LU
+% 		=QR \left(\Lambda^i L \left(\Lambda^{-1}\right)^i\right)\Lambda^iU
+% 	\end{equation*}
+% \end{proof}
+
+
+% \newpage
+\section{New and Improved $QR$ Algorithm}
+
+This is the algorithm used by the Linear Algebra PACKage (\textsc{Lapack}), which is in turn used by libraries like NumPy and SciPy to calculate eigenvalues and eigenvectors.
+
+\begin{tcolorbox}[title={Hessenberg matrix},colback=blue!5!white,colframe=blue!75!black,parbox=false]
+	A Hessenberg matrix $H$ is one that is ``almost'' triangular: it is a triangular matrix with nonzero entries in the diagonal just above or just below its main diagonal. A \textbf{lower} Hessenberg matrix $H$ satisfies $H_{ij}=0$ for all $j>i+1$, and an \textbf{upper} Hessenberg matrix $H$ satisfies $H_{ij}=0$ for all $i>j+1$.
+
+	For example, $H_l$ and $H_u$ are $5\times 5$ lower and upper Hessenberg matrices, respectively.
+	\begin{equation*}
+	    H_l=\begin{bmatrix}
+			\times & \times & 0 & 0 & 0 \\
+			\times & \times & \times & 0 & 0 \\
+			\times & \times & \times & \times & 0 \\
+			\times & \times & \times & \times & \times \\
+			\times & \times & \times & \times & \times \\
+	    \end{bmatrix}
+		\qquad
+	    H_u=\begin{bmatrix}
+			\times & \times & \times & \times & \times \\
+			\times & \times & \times & \times & \times \\
+			0 & \times & \times & \times & \times \\
+			0 & 0 & \times & \times & \times \\
+			0 & 0 & 0 & \times & \times \\
+	    \end{bmatrix}
+	\end{equation*}
+\end{tcolorbox}
+
+\begin{tcolorbox}[title={\textsc{Lapack} Algorithm},colback=red!5!white,colframe=red!75!black,parbox=false]
+	\begin{enumerate}
+		\item Reduce $A$ to an \textit{upper Hessenberg} form by calculating $A=QHQ^T$, where $Q$ is orthogonal and $H$ is an upper Hessenberg matrix. $H$ and $A$ are similar and share the same eigenvalues.
+		\item Calculate the Schur form of $H$.
+	\end{enumerate}
+	Reference: \cite{lapack:eig}.
+\end{tcolorbox}
+
+By definition, Hessenberg matrices are more \textit{sparse} (containing more zero entries) than the general matrix $A$, so $QR$ factorizing and multiplying a Hessenberg matrix will be less computationally intensive. In fact, $QR$ iteration on a Hessenberg matrix is only order $\mathcal O(n^2)$, compared to $\mathcal O(n^3)$ for general matrices.
+\begin{tcolorbox}[title={Real Schur form},colback=blue!5!white,colframe=blue!75!black,parbox=false]
+	Let $A$ be an $n\times n$ real matrix. The \textbf{real Schur form} of $A$ is:
+	\begin{equation*}
+		A=QUQ^T=QUQ^{-1}
+	\end{equation*}
+	where $Q$ is orthogonal and $U$ is an \textit{upper quasi-triangular} matrix in block form:
+	\begin{equation*}
+	    U=\begin{bmatrix}
+			B_1 & \times & \times & \times \\
+			0 & B_2 & \times & \times \\
+			\vdots & \vdots & \ddots & \times \\
+			0 & 0 & \ldots & B_k
+	    \end{bmatrix}
+	\end{equation*}
+	where $B_1,B_2,\ldots B_k$ are $1\times1$ or $2\times2$ real submatrices. A $1\times 1$ submatrix contains a real eigenvalue, while a $2\times 2$ submatrix $B$ is in form:
+	\begin{equation*}
+	    B=\begin{bmatrix}
+			a & b \\
+			-b & a
+	    \end{bmatrix}
+	\end{equation*}
+	which corresponds to the eigenvalues $a+bi$ and its conjugate $a-bi$, which is also an eigenvalue.
+\end{tcolorbox}
+Step 2 (Schur decomposition) is an intricate and complicated procedure performed by \textsc{Lapack}'s \texttt{xHSEQR} function. In particular, it uses the Francis double shift $QR$ algorithm, which essentially ``shifts'' the intermediate matrix $A_i$ from $QR$ iteration by $\lambda I$ and its complex conjugate $\overline{\lambda} I$ every step \cite{byers,cornellnotes2}. The Francis double shift algorithm converges to the \textit{real Schur form}, from where both real and complex eigenvalues can be easily calcualted.
+
+\begin{tcolorbox}[title={Householder transformation},colback=blue!5!white,colframe=blue!75!black,parbox=false]
+	In the real numbers, an $n\times n$ Householder matrix is in the form
+	\begin{equation*}
+	    H=I_n - 2 v v ^T
+	\end{equation*}
+	where $I_n$ is the $n\times n$ identity, and $v$ is a unit vector in $\mathbb R^n$.
+
+	For all vectors $w\in\mathbb R^n$ and $w'\in\mathbb R^n$ where $\left\Vert w\right\Vert=\left\Vert w'\right\Vert$, there exists an $n\times n$ Householder matrix $H$ such that $Hw=w'$. That is, there exists a Householder matrix mapping any vector $w$ to another vector $w$ of the same norm as $w$.
+
+	For a proof and reference for the above theorem, see \cite{cambridge}.
+\end{tcolorbox}
+
+\subsection{Hessenberg Reduction}
+Step 1 (Hessenberg reduction) is somewhat simpler\footnote{admittedly, ``simpler than the Francis double-step algorithm'' is a very low bar}, so we can try explaining its steps. Reference: \cite{wikipedia}.
+
+Let $A$ be an $n\times n$ real matrix. Then, let $A'$ be an $(n-1)\times n$ matrix consisting of the $2$nd to $n$th row of $A$, and let $a_1'\in\mathbb R^{n-1}$ be the first column of $A'$.
+
+Now, we need to calculate the $(n-1)\times(n-1)$ matrix $V_1$ that maps $a_1'$ to a vector with only one component in the form $(\times, 0, 0, \ldots, 0)$. As long as the new vector has the same norm as $a_1'$, we can find a Householder matrix $V_1$ to accomplish this mapping.
+\begin{equation}
+	V_1=I_{n-1}-2vv^T \qquad
+	v=\frac{\sgn \left(a_{11}'\right) \left\Vert a_1' \right\Vert e_1+a_1'}{\left\Vert \sgn \left(a_{11}'\right) \left\Vert a_1' \right\Vert e_1+a_1' \right\Vert}
+\end{equation}
+where $I_{n-1}$ is the $(n-1)\times(n-1)$ identity, $e_1$ is the standard basis vector for $\mathbb R^{n-1}$: $(1,0,0,\ldots,0)$, or the first row/column of the $(n-1)\times (n-1)$ identity, and $a_{11}'$ is the first component of the vector $a_1'$. If we apply the transformation $V_1$ to $a_1'$, we will have a scalar multiple of $e_1$.
+
+Note that $V_1$ is an $(n-1)\times(n-1)$ matrix. Define the following $n\times n$ block matrix $U_1$,
+\begin{equation*}
+    U_1=\begin{bmatrix}
+		1 & 0 \\
+		0 & V_1
+    \end{bmatrix}
+\end{equation*}
+The first column will be in the form $\begin{bmatrix}
+	\times & \times & 0 & 0 & \ldots & 0
+\end{bmatrix}^T$. This is what we want in a Hessenberg matrix, as for the first columns, there are no nonzero entries below the diagonal below the main diagonal (``the subdiagonal'').
+
+Now, we may repeat the process. However, remove \textbf{two} rows from the top of $A$, and one column from the left of $A$, and call this new matrix $A''$, which is $(n-2)\times(n-1)$. Then, take $a_1''\in\mathbb R^{n-2}$ as the first column of $A''$. Calculate the Householder matrix $V_2$ using formula $(6)$, and calculate $U_2$ in a fashion:
+\begin{equation*}
+    U_2=\begin{bmatrix}
+		1 & 0 & 0 \\
+		0 & 1 & 0 \\
+		0 & 0 & V_2
+    \end{bmatrix}
+\end{equation*}
+Then the first and second columns of $U_2U_1A$ has no nonzero entries below the subdiagonal.
+
+Continue for a total of $n-2$ steps. Then, $H=U_{n-2}U_{n-3}\ldots U_2U_1A$ has no nonzero entries below the subdiagonal on all columns, and we have reduced a general matrix $A$ to the the Hessenberg form. Also, the following is true:
+\begin{equation*}
+	H
+	=U_{n-2}U_{n-3}\ldots U_2U_1A
+	=U_{n-2}U_{n-3}\ldots U_2U_1AU_1U_2\ldots U_{n-3}U_{n-2}
+\end{equation*}
+And therefore, the Hessenberg matrix $H$ is similar to $A$, because $U_i=U_i^{-1}$. Any $QR$ Algorithm will take less floating point operations per step on a Hessenberg matrix, which has more zeros, than a general matrix $A$.
+
+The implementation in the Jupyter notebook is slightly different and is based on an algorithm in \cite{mit}.
+
+\section{Comparison}
+First, a breakdown of the outcome of each algorithm. It is easy to recover \textbf{every} eigenvalue of a matrix from its Schur form, since they are all listed on its diagonal.
+
+\begin{center}
+	\setlist{rightmargin=4mm}
+	\begin{tabular}{|p{0.7in}||p{2.7in}|p{3.3in}|}
+		\hline
+		\multicolumn{1}{|c||}{Algorithm} &
+		\multicolumn{1}{c|}{Advantages} &
+		\multicolumn{1}{c|}{Disadvantages} \\
+		\hline
+		\hline
+		\vspace{\topsep}\centering Power Method &
+		\begin{itemize}
+			\item Simple.
+		\end{itemize} &
+		\begin{itemize}
+			\item Breaks down if there two eigenvalues with the same magnitude.
+			\item Only finds dominant eigenvalues.
+			\item Unable to find complex eigenvalues.
+			\item Need to use shifts to address above, which are complicated.
+			\item Convergence speed depends on starting vector.
+		\end{itemize} \\
+		\hline
+		\vspace{\topsep}\centering Basic $QR$ &
+		\begin{itemize}
+			\item Finds all eigenvalues.
+			\item No starting vector to worry about.
+		\end{itemize} &
+		\begin{itemize}
+			\item Needs modifications to find complex eigenvalues.
+			\item Similar problems to Power Method: no handling of multiple dominant eigenvalues.
+		\end{itemize} \\
+		\hline
+		\vspace{\topsep}\centering Improved $QR$ &
+		\begin{itemize}
+			\item Finds all eigenvalues.
+			\item Works on all matrices.
+			\item Faster: lower big-$\mathcal O$.
+		\end{itemize} &
+		\begin{itemize}
+			\item Complicated.
+		\end{itemize} \\
+		\hline
+	\end{tabular}
+
+	Table showing advantages and disadvantages of each algorithm.
+\end{center}
+
+\pagebreak
+\printbibliography
+
+\end{document}
