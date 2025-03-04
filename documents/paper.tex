@@ -69,7 +69,7 @@
 \author{Jayden Li}
 \date{Linear Algebra 2024-25}
 % \allowdisplaybreaks
-\postdisplaypenalty=100000
+% \postdisplaypenalty=100000
 \setcounter{section}{-1}
 
 \begin{document}
@@ -139,7 +139,7 @@ Let $v_0\in\mathbb R^n$ be a random vector, let $v=Pv_0$, let $v_{0_i}$ be the $
 		& & \lambda_n^k
 	\end{bmatrix}
 	\begin{bmatrix}
-		v_{0_1} \\ \dots \\ v_{0_n}
+		v_{0_1} \\ \vdots \\ v_{0_n}
 	\end{bmatrix}
 	=\begin{bmatrix}
 		p_1 & \ldots & p_n
@@ -189,9 +189,9 @@ Let us return to the condition marked by an asterisk above. If that assumption i
     \lim_{k\to\infty}A^k v
 	&=\lim_{k\to\infty}\lambda_1^k \sum_{i=1}^{n}\left(\frac{\lambda_i}{\lambda_1}\right)^k v_{0_i}p_i
 	=\lim_{k\to\infty}\lambda_1^k \left(\cancel{\left(\frac{\lambda_1}{\lambda_1}\right)^k} v_{0_1}p_1+\cancel{\left(\frac{\lambda_2}{\lambda_1}\right)^k}v_{0_2}p_2+\cancel{\sum_{i=3}^{n}\left(\frac{\lambda_i}{\lambda_1}\right)^k v_{0_i}p_i}\right) \\
-	&=\lim_{k\to\infty}\left(v_{0_1}p_1+v_{0_2}p_2\right)
+	&=\lim_{k\to\infty}\lambda_1^k\left(v_{0_1}p_1+v_{0_2}p_2\right)
 \end{align*}
-Knowing this is parallel to $A^kv$ is not helpful, so the algorithm will break down.
+ If $\lambda_1\neq\lambda_2$, $\lim_{k\to\infty}A^k$ is not an eigenvector of $A$.
 
 Furthermore, let us consider the case where the dominant eigenvalue of a real matrix $A$ is a complex number $a+bi$. Complex eigenvalues appear in complex conjugate pairs (since if $a+bi$ is a root of the characteristic polynomial, so must $a-bi$), so $a-bi$ is also an eigenvalue \cite{utnlecture}. But notice that $\left|a+bi\right|=\sqrt{a^2+b^2}=\left|a-bi\right|$, so the algorithm will break down. In fact, if the dominant eigenvalue is complex, the algorithm will not work.
 
