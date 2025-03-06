@@ -52,12 +52,12 @@
 	\frametitle{Power Method}
 	\begin{tcolorbox}[title={Power Method},colback=red!5!white,colframe=red!75!black,parbox=false]
 		\begin{enumerate}
-			\item<1-> Let $x_0$ be a random vector in $\mathbb R^n$.
-			\item<2-> Define $\displaystyle x_{i+1}=\frac{Ax_i}{||Ax_i||}$. Then $x_k\neq A^kx_0$, but are pointing in the same direction.
-			\item<3-> Iterate the above process for $m$ steps. Now, we have have calculated $x_m$, which is parallel to $A^m x_0$.
-			\item<4-> Calculate the dominant eigenvalue $\displaystyle \lambda_1=\frac{\left\Vert A A^m x_0 \right\Vert}{\left\Vert A^m x_0 \right\Vert}=\frac{\left\Vert A x_m\right\Vert}{\left\Vert x_m \right\Vert}=\frac{Ax_m\cdot x_m}{x_m \cdot x_m}$.
+			\item<2-> Let $x_0$ be a random vector in $\mathbb R^n$.
+			\item<3-> Define $\displaystyle x_{i+1}=\frac{Ax_i}{||Ax_i||}$. Then $x_k\neq A^kx_0$, but are pointing in the same direction.
+			\item<4-> Iterate the above process for $m$ steps. Now, we have have calculated $x_m$, which is parallel to $A^m x_0$.
+			\item<5-> Calculate the dominant eigenvalue $\displaystyle \lambda_1=\frac{\left\Vert A A^m x_0 \right\Vert}{\left\Vert A^m x_0 \right\Vert}=\frac{\left\Vert A x_m\right\Vert}{\left\Vert x_m \right\Vert}=\frac{Ax_m\cdot x_m}{x_m \cdot x_m}$.
 		\end{enumerate}
-		\onslide<4->{Reference: \cite{kochlab}.}
+		\onslide<6->{Reference: \cite{kochlab}.}
 	\end{tcolorbox}
 \end{frame}
 
@@ -187,14 +187,14 @@
 	\frametitle{Basic $QR$ Algorithm}
 	\begin{tcolorbox}[title={Basic $QR$ Algorithm},colback=red!5!white,colframe=red!75!black,parbox=false]
 		\begin{enumerate}
-			\item<1-> Set $A_1=A$.
-			\item<2-> Define $A_{i+1}=R_iQ_i$, where $A_1=Q_iR_i$.
-			\item<3-> Iterate step 2 $m$ times to calculate $A_{m+1}$.
-			\item<4-> If ``good case,'' $A_{m+1}$ tends to a triangular matrix ($U$ in Schur form). Trivial to read off eigenvalues.
+			\item<2-> Set $A_1=A$.
+			\item<3-> Define $A_{i+1}=R_iQ_i$, where $A_1=Q_iR_i$.
+			\item<4-> Iterate step 2 $m$ times to calculate $A_{m+1}$.
+			\item<5-> If ``good case,'' $A_{m+1}$ tends to a triangular matrix ($U$ in Schur form). Trivial to read off eigenvalues.
 		\end{enumerate}
-		\onslide<4->{Reference: \cite[64]{ethbook}.}
+		\onslide<5->{Reference: \cite[64]{ethbook}.}
 	\end{tcolorbox}
-	\onslide<5->{Proof is hard and complicated. We will ``prove'' by example.}
+	\onslide<6->{Proof is hard and complicated. We will ``prove'' by example.}
 \end{frame}
 
 \begin{frame}
@@ -440,17 +440,20 @@
 
 \begin{frame}
 	\frametitle{Improved $QR$ Algorithm}
-	\begin{tcolorbox}[title={\textsc{Lapack} Algorithm},colback=red!5!white,colframe=red!75!black,parbox=false]
-		\begin{enumerate}
-			\item<1-> Reduce $A$ to an \textit{upper Hessenberg} form by calculating $A=QHQ^T$, where $Q$ is orthogonal and $H$ is an upper Hessenberg matrix. $H$ and $A$ are similar and share the same eigenvalues.
-			\item<2-> Calculate the Schur form of $H$.
-		\end{enumerate}
-		\onslide<2->{Reference: \cite{lapack:eig}.}
-	\end{tcolorbox}
-	\onslide<3->{
+	\onslide<1->{
 		Used by the Linear Algebra PACKage (\textsc{Lapack}), which is used by NumPy and SciPy behind the scenes.
 	}
+	\begin{tcolorbox}[title={\textsc{Lapack} Algorithm},colback=red!5!white,colframe=red!75!black,parbox=false]
+		\begin{enumerate}
+			\item<2-> Reduce $A$ to an \textit{upper Hessenberg} form by calculating $A=QHQ^T$, where $Q$ is orthogonal and $H$ is an upper Hessenberg matrix. $H$ and $A$ are similar and share the same eigenvalues.
+			\item<3-> Calculate the Schur form of $H$.
+		\end{enumerate}
+		\onslide<3->{Reference: \cite{lapack:eig}.}
+	\end{tcolorbox}
 \end{frame}
+
+\section{Conclusion}
+\frame{\sectionpage}
 
 \begin{frame}
 	\frametitle{References}
