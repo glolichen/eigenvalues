@@ -338,7 +338,7 @@ It is interesting that the Basic $QR$ Algorithm may produce the correct Schur fo
 This is the algorithm used by the Linear Algebra PACKage (\textsc{Lapack}), which is in turn used by libraries like NumPy and SciPy to calculate eigenvalues and eigenvectors.
 
 \begin{tcolorbox}[title={Hessenberg matrix},colback=blue!5!white,colframe=blue!75!black,parbox=false]
-	A Hessenberg matrix $H$ is one that is ``almost'' triangular: it is a triangular matrix with nonzero entries in the diagonal just above or just below its main diagonal. A \textbf{lower} Hessenberg matrix $H$ satisfies $H_{ij}=0$ for all $j>i+1$, and an \textbf{upper} Hessenberg matrix $H$ satisfies $H_{ij}=0$ for all $i>j+1$.
+	A Hessenberg matrix is a matrix with nonzero entries only in the diagonal just above or just below its main diagonal. A \textbf{lower} Hessenberg matrix $H$ satisfies $H_{ij}=0$ for all $j>i+1$, and an \textbf{upper} Hessenberg matrix $H$ satisfies $H_{ij}=0$ for all $i>j+1$.
 
 	For example, $H_l$ and $H_u$ are $5\times 5$ lower and upper Hessenberg matrices, respectively.
 	\begin{equation*}
@@ -498,9 +498,7 @@ First, a breakdown of the outcome of each algorithm. It is easy to recover \text
 	Table showing advantages and disadvantages of each algorithm.
 \end{center}
 
-Next, a comparison of the time taken. The Power Method is so drastically different from the $QR$ Algorithms we will only compare the Basic and Improved Algorithms. Since the Francis double-step algorithm is too complicated, we will modify (``un-improve'') the Improved Algorithm by performing a Hessenberg reduction, then applying the Basic $QR$ Algorithm to the Hessenberg matrix.
-
-We will perform the following procedure for a constant $m$ number of iterations:
+Next, a comparison of the time taken. The Power Method is so drastically different from the $QR$ Algorithms we will only compare the Basic and Improved Algorithms. Since the Francis double-step algorithm is too complicated, we will modify (``un-improve'') the Improved Algorithm by performing a Hessenberg reduction, then applying the Basic $QR$ Algorithm to the Hessenberg matrix. We perform the following for a constant $m$ number of iterations:
 \begin{enumerate}
 	\item Set $A$ to some random $n\times n$ matrix.
 	\item Calculate the time to run $m$ iterations of the Basic $QR$ Algorithm on $A$.

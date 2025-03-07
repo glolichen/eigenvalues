@@ -21,6 +21,9 @@
 \author{Jayden Li}
 \date{Friday, March 7, 2025}
 
+\def\mathdefault#1{#1}
+\everymath=\expandafter{\the\everymath\displaystyle}
+
 \begin{document}
 
 \frame{\titlepage}
@@ -53,11 +56,11 @@
 	\begin{tcolorbox}[title={Power Method},colback=red!5!white,colframe=red!75!black,parbox=false]
 		\begin{enumerate}
 			\item<2-> Let $x_0$ be a random vector in $\mathbb R^n$.
-			\item<3-> Define $\displaystyle x_{i+1}=\frac{Ax_i}{||Ax_i||}$. Then $x_k\neq A^kx_0$, but are pointing in the same direction.
+			\item<3-> Define $\displaystyle x_{i+1}=\frac{Ax_i}{||Ax_i||}$.
 			\item<4-> Iterate the above process for $m$ steps. Now, we have have calculated $x_m$, which is parallel to $A^m x_0$.
 			\item<5-> Calculate the dominant eigenvalue $\displaystyle \lambda_1=\frac{\left\Vert A A^m x_0 \right\Vert}{\left\Vert A^m x_0 \right\Vert}=\frac{\left\Vert A x_m\right\Vert}{\left\Vert x_m \right\Vert}=\frac{Ax_m\cdot x_m}{x_m \cdot x_m}$.
 		\end{enumerate}
-		\onslide<6->{Reference: \cite{kochlab}.}
+		\onslide<5->{Reference: \cite{kochlab}.}
 	\end{tcolorbox}
 \end{frame}
 
@@ -95,10 +98,10 @@
 	\frametitle{Derivation of the Power Method (3)}
 	\begin{itemize}
 		\item<1-> $\displaystyle \lim_{k\to\infty}A^kP=PD^k$ becomes $\displaystyle \lim_{k\to\infty}A^kPv_0=PD^kv_0=A^kv$.
-		\item<2->[]
-		\begin{equation*}
-			A^k v 
-			= P \begin{bmatrix}
+		\vspace*{-\abovedisplayskip}
+		\begin{align*}
+			\onslide<2->{A^k v 
+			&= P \begin{bmatrix}
 				\lambda_1^k & & \\
 				& \ddots & \\
 				& & \lambda_n^k
@@ -112,15 +115,11 @@
 				\lambda_1^k v_{0_1} \\ 
 				\vdots \\
 				\lambda_n^k v_{0_n} \\ 
-			\end{bmatrix}
-		\end{equation*}
-
-		\item<3->[]
-		\begin{equation*}
-			A^kv=\sum_{i=1}^{n}\lambda_i^k v_{0_i} p_i
+			\end{bmatrix}} \\
+			\onslide<3->{A^kv&=\sum_{i=1}^{n}\lambda_i^k v_{0_i} p_i
 			=\sum_{i=1}^{n}\lambda_1^k\frac{\lambda_i^k}{\lambda_1^k} v_{0_i} p_i
-			=\lambda_1^k \sum_{i=1}^{n}\left(\frac{\lambda_i}{\lambda_1}\right)^k v_{0_i}p_i
-		\end{equation*}
+			=\lambda_1^k \sum_{i=1}^{n}\left(\frac{\lambda_i}{\lambda_1}\right)^k v_{0_i}p_i}
+		\end{align*}
 	
 		\item<4->
 		Now, if $\left|\lambda_1\right|>\left|\lambda_2\right|\geq\ldots\geq \left|\lambda_n\right|$, then $\lambda_i/\lambda_1<1$ for all $i\neq 1$.
@@ -137,21 +136,15 @@
 	\begin{itemize}
 		\item<1-> Now suppose $\left|\lambda_1\right|=\left|\lambda_2\right|$.
 		\item<2->[]
-		\begin{equation*}
-			A^kv=\sum_{i=1}^{n}\lambda_i^k v_{0_i} p_i
+		\vspace*{-\abovedisplayskip}
+		\begin{align*}
+			A^kv
+			&=\sum_{i=1}^{n}\lambda_i^k v_{0_i} p_i
 			=\sum_{i=1}^{n}\lambda_1^k\frac{\lambda_i^k}{\lambda_1^k} v_{0_i} p_i
-			=\lambda_1^k \sum_{i=1}^{n}\left(\frac{\lambda_i}{\lambda_1}\right)^k v_{0_i}p_i
-		\end{equation*}
-		\item<2->[]
-		\begin{equation*}
-			A^k v
-			=\lim_{k\to\infty}\lambda_1^k \left(\cancel{\left(\frac{\lambda_1}{\lambda_1}\right)^k} v_{0_1}p_1+\cancel{\left(\frac{\lambda_2}{\lambda_1}\right)^k}v_{0_2}p_2+\cancel{\sum_{i=3}^{n}\left(\frac{\lambda_i}{\lambda_1}\right)^k v_{0_i}p_i}\right)
-		\end{equation*}
-		\item<2->[]
-		\begin{equation*}
-			A^k v
-			=\lim_{k\to\infty}\lambda_1^k\left(v_{0_1}p_1+v_{0_2}p_2\right)
-		\end{equation*}
+			=\lambda_1^k \sum_{i=1}^{n}\left(\frac{\lambda_i}{\lambda_1}\right)^k v_{0_i}p_i \\
+			&=\lim_{k\to\infty}\lambda_1^k \left(\cancel{\left(\frac{\lambda_1}{\lambda_1}\right)^k} v_{0_1}p_1+\cancel{\left(\frac{\lambda_2}{\lambda_1}\right)^k}v_{0_2}p_2+\cancel{\sum_{i=3}^{n}\left(\frac{\lambda_i}{\lambda_1}\right)^k v_{0_i}p_i}\right) \\
+			&=\lim_{k\to\infty}\lambda_1^k\left(v_{0_1}p_1+v_{0_2}p_2\right)
+		\end{align*}
 		is not an eigenvector of $A$ if $\lambda_1\neq\lambda_2$.
 	\end{itemize}
 \end{frame}
@@ -164,7 +157,7 @@
 		\item<3-> But $\left|\lambda_1\right|=\sqrt{a^2+b^2}=\left|\lambda_2\right|$.
 		\item<4-> Cannot calculate complex eigenvalues.
 		\item<5-> Can use shifts (calculate eigenvalues of $A-cI$), but that is complicated.
-		\item<6-> Even worse: only calculates dominant eigenvalue.
+		\item<6-> Only calculates dominant eigenvalue.
 		\item<7-> Speed of convergence depends on choice of starting vector.
 	\end{itemize}
 \end{frame}
@@ -397,7 +390,7 @@
 	\end{minipage}}
 
 	\onslide<3->{
-		$\displaystyle \lim_{k\to\infty}A_k$ will not converge onto a triangular matrix.
+		$\displaystyle \lim_{k\to\infty}A_k$ will not converge to a triangular matrix.
 	}
 	\end{center}
 \end{frame}
@@ -440,20 +433,100 @@
 
 \begin{frame}
 	\frametitle{Improved $QR$ Algorithm}
+	\begin{tcolorbox}[title={Hessenberg matrix},colback=blue!5!white,colframe=blue!75!black,parbox=false]
+		\onslide<2->{A Hessenberg matrix is a matrix with nonzero entries only in the diagonal just above or just below its main diagonal. A \textbf{lower} Hessenberg matrix $H$ satisfies $H_{ij}=0$ for all $j>i+1$, and an \textbf{upper} Hessenberg matrix $H$ satisfies $H_{ij}=0$ for all $i>j+1$.}
+		\onslide<3->{\begin{equation*}
+			H_l=\begin{bmatrix}
+				\times & \times & 0 & 0 & 0 \\
+				\times & \times & \times & 0 & 0 \\
+				\times & \times & \times & \times & 0 \\
+				\times & \times & \times & \times & \times \\
+				\times & \times & \times & \times & \times \\
+			\end{bmatrix}
+			\qquad
+			H_u=\begin{bmatrix}
+				\times & \times & \times & \times & \times \\
+				\times & \times & \times & \times & \times \\
+				0 & \times & \times & \times & \times \\
+				0 & 0 & \times & \times & \times \\
+				0 & 0 & 0 & \times & \times \\
+			\end{bmatrix}
+		\end{equation*}}
+	\end{tcolorbox}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Improved $QR$ Algorithm}
 	\onslide<1->{
 		Used by the Linear Algebra PACKage (\textsc{Lapack}), which is used by NumPy and SciPy behind the scenes.
 	}
 	\begin{tcolorbox}[title={\textsc{Lapack} Algorithm},colback=red!5!white,colframe=red!75!black,parbox=false]
 		\begin{enumerate}
 			\item<2-> Reduce $A$ to an \textit{upper Hessenberg} form by calculating $A=QHQ^T$, where $Q$ is orthogonal and $H$ is an upper Hessenberg matrix. $H$ and $A$ are similar and share the same eigenvalues.
-			\item<3-> Calculate the Schur form of $H$.
+			\item<3-> Calculate the Schur form of $H$ using the Francis double-step algorithm.
 		\end{enumerate}
 		\onslide<3->{Reference: \cite{lapack:eig}.}
 	\end{tcolorbox}
 \end{frame}
 
-\section{Conclusion}
-\frame{\sectionpage}
+\begin{frame}
+	\frametitle{Hessenberg Example}
+	\vspace*{-\abovedisplayskip}
+	\begin{gather*}
+		\onslide<1->{A=\begin{bmatrix}
+			5 & 4 & 2 & 0 & 59 \\
+			12 & 5 & 3 & 12 & 6 \\
+			96 & 4 & 696 & 12 & 3 \\
+			23 & 4 & 1 & 2 & 2 \\
+			66 & 7 & 8 & 22 & 1 \\
+		\end{bmatrix}} \\
+		\onslide<2->{H=\begin{bmatrix}
+			5 & -34.64 & 43.54 & -4.41 & 19.65 \\
+			-119.35 & 461.78 & 325.31 & 0.33 & 22.18 \\
+			0 & 324.49 & 245.37 & 8.50 & -9.67 \\
+			0 & 0 & 10.68 & 2.38 & -6.14 \\
+			0 & 0 & 0 & -1.57 & -5.52 \\
+		\end{bmatrix}}
+	\end{gather*}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Advantages}
+	\begin{itemize}
+		\item<1-> Calculates every eigenvalue.
+		\item<2-> Works on all matrices (because of the fancy Schur algorithm).
+		\item<3-> Hessenberg reduction reduces each $QR$ step to $\mathcal O(n^2)$.
+		\item<4-> Very easy to recover complex eigenvalues.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Basic vs Improved $QR$ Algorithm}
+	\begin{center}
+		\resizebox{0.8\textwidth}{!}{\input{80.pgf}}
+	\end{center}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Basic vs Improved $QR$ Algorithm}
+	\begin{center}
+		\resizebox{0.8\textwidth}{!}{\input{120.pgf}}
+	\end{center}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Basic vs Improved $QR$ Algorithm}
+	\begin{center}
+		\resizebox{0.8\textwidth}{!}{\input{160.pgf}}
+	\end{center}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Basic vs Improved $QR$ Algorithm}
+	\begin{center}
+		\resizebox{0.8\textwidth}{!}{\input{200.pgf}}
+	\end{center}
+\end{frame}
 
 \begin{frame}
 	\frametitle{References}
