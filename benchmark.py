@@ -4,8 +4,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import time
 
+# number of random matrices to run calculations on
+# the time for that size will be the mean of the 20 runs
 samples = 20
-
 
 def basic_qr(A: np.ndarray, iterations: int) -> float:
     for i in range(iterations):
@@ -21,7 +22,7 @@ def hessenberg_qr(A: np.ndarray, iterations: int) -> float:
         A = R @ Q
     return A, np.diag(A)
 
-
+# export pgf for insertion to paper
 matplotlib.use("pgf")
 matplotlib.rcParams.update({
     "pgf.texsystem": "pdflatex",
@@ -30,12 +31,14 @@ matplotlib.rcParams.update({
     'pgf.rcfonts': False,
 })
 
-for iterations in range(160, 201, 40):
-    # for iterations in range(20, 221, 20):
+# the number of iterations to run the algorithm are
+# 40, 80, 120, 160 and 200 iterations
+for iterations in range(40, 201, 40):
     x = []
     y1 = []
     y2 = []
 
+    # the size of the matrix: 10, 30, 50, ... largest is 590x590
     for n in range(10, 601, 20):
         x.append(n)
         basic_sum, hessenberg_sum = 0, 0
